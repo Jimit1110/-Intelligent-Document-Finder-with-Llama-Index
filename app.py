@@ -21,7 +21,6 @@ st.title("Welcom To Intelligent Document Finder App")
 
 #folder_id = st.text_input("Enter Google Drive folder link:")
 
-
 def new_index(vector_store, embed_model):
     index = VectorStoreIndex.from_vector_store(
         vector_store=vector_store,
