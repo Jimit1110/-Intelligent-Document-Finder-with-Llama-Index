@@ -186,3 +186,12 @@ websockets==11.0.3
 wrapt==1.16.0
 yarl==1.9.4
 zipp==3.17.0
+fastapi[all]
+psycopg2
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+google-auth 
+google-auth-oauthlib 
+google-auth-httplib2 
+google-api-python-client
