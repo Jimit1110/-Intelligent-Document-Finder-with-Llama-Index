@@ -7,3 +7,4 @@ pipeline_store
 venv
 indexed_files.txt
 credentials.json
+.env
