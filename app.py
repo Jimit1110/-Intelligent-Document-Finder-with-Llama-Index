@@ -10,6 +10,7 @@ import requests
 from dotenv import load_dotenv
 import os
 
+
 load_dotenv()
 GOOGLEAI_API_KEY=os.getenv('GOOGLEAI_API_KEY')
 
@@ -21,6 +22,7 @@ st.title("Welcom To Intelligent Document Finder App")
 
 #folder_id = st.text_input("Enter Google Drive folder link:")
 
+
 def new_index(vector_store, embed_model):
     index = VectorStoreIndex.from_vector_store(
         vector_store=vector_store,
@@ -29,11 +31,10 @@ def new_index(vector_store, embed_model):
     return index
 
 
-#index the documents
-index = new_index(create_or_get_vectordb(), embed_model())
+
 #set up the Geming LLM model    
 Settings.llm = Gemini(model="models/gemini-pro")
-query_engine = index.as_query_engine() 
+
 
 #function to get JWT token which is returned by backend API enpoint for login
 @st.cache_data()
@@ -96,13 +97,15 @@ if choice == 'Login' :
         if token:
             # Store the token in session state
             st.session_state.token = token
-            st.write("Token:", st.session_state.token)
+            #st.write("Token:", st.session_state.token)
 
 
 if choice == 'Search' :
     #interface for providing google drive folder link and querying
     st.header("Provide your Google drive folder Id!!")
     google_drive_folder_id = st.text_input("Google Drive Folder Id")
+    
+    
     if st.button("Load Data"):
         datauser={"token": st.session_state.token, "google_drive_folder_id": google_drive_folder_id}
         #sending request to API endpoints for users verification
@@ -111,6 +114,7 @@ if choice == 'Search' :
         if response.status_code == 200:
             message=response.json().get('message')
             st.write(message)
+            
             docs = load_data_from_drive(google_drive_folder_id)
     
             # Create or load the ingestion pipeline
@@ -121,7 +125,11 @@ if choice == 'Search' :
             print(f"Ingested {len(nodes)} Nodes")
             st.write(f"Data loaded from Google Drive folder: {google_drive_folder_id} and processed.")
         else:
-            st.error("Failed to Authenticate please provide link of ypu google drive folder only!!")
+            st.error("Failed to Authenticate please provide link of your google drive folder only!!")
+    #index the documents
+    index = new_index(create_or_get_vectordb(), embed_model())
+    query_engine = index.as_query_engine()
+
     query = st.text_input("Enter your query:")
     if st.button("Query"):
         response, File_name, owner, date_creation, date_modified, page_no = query_response(query)
