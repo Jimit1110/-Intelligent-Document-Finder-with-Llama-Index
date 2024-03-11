@@ -7,7 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 SQLALCHEMY_DATABASE_URL = 'postgresql://postgres:admin123@localhost/user_data'
 
 #create a SQLAlchemy engine to connect to the PostgreSQL database
-engine = create_engine(SQLALCHEMY_DATABASE_URL, echo=True)
+engine = create_engine(SQLALCHEMY_DATABASE_URL)
 
 #create a sessionmaker bound to the engine for managing database sessions
 SessionLocal=sessionmaker(autocommit=False, autoflush=False, bind=engine)
