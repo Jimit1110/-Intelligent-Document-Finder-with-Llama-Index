@@ -14,7 +14,7 @@ def create_or_load_pipeline():
             SentenceSplitter(),
             embed_model(),
         ],
-        vector_store=create_or_get_vectordb(),
+        vector_store=create_or_get_vectordb(caller="call_from_pipeline"),
         docstore=SimpleDocumentStore()
     )
     pipeline.persist("pipeline_store")
