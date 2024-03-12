@@ -5,6 +5,8 @@ from typing import Annotated
 from sqlalchemy.orm import Session
 import auth
 import uvicorn
+import subprocess
+import psutil
 
 app=FastAPI()
 #include the router
@@ -30,5 +32,12 @@ async def user(user: None, db: db_dependency):
         raise HTTPException(status_code=401, detail='Authentication failed')
     return {'User': user}
 
+#get information about all processes with a 'cmdline' attribute that is not empty
+streamlit_processes = [p.info for p in psutil.process_iter(attrs=['cmdline']) if p.info['cmdline'] and 'app.py' in p.info['cmdline']]
+
+#check if there are no Streamlit processes running
+if not streamlit_processes:
+    #run the streamlit app if it's not already running
+    subprocess.Popen(["streamlit", "run", "app.py"])
 if __name__=='__main__':
     uvicorn.run("main:app", reload=True)
