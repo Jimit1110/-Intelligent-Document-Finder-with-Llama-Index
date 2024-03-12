@@ -107,8 +107,9 @@ if choice == 'Search' :
         try:
             #extract the folder ID from the Google Drive folder link using regular expression
             google_drive_folder_id = re.search(r"/folders/([^\s/]+)", google_drive_folder_link).group(1)
-        except:
+        except AttributeError:
             st.error("please provide valid google drive folder link")
+            raise Exception("Invalid Google Drive folder link provided")
     if st.button("Load Data"):
         datauser={"token": st.session_state.token, "google_drive_folder_id": google_drive_folder_id}
         #sending request to API endpoints for users verification
