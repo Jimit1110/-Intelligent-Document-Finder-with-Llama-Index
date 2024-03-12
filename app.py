@@ -9,7 +9,7 @@ from llama_index.core import VectorStoreIndex
 import requests
 from dotenv import load_dotenv
 import os
-
+import re
 
 load_dotenv()
 GOOGLEAI_API_KEY=os.getenv('GOOGLEAI_API_KEY')
@@ -29,8 +29,6 @@ def new_index(vector_store, embed_model):
         embed_model=embed_model,
     )
     return index
-
-
 
 #set up the Geming LLM model    
 Settings.llm = Gemini(model="models/gemini-pro")
@@ -103,9 +101,14 @@ if choice == 'Login' :
 if choice == 'Search' :
     #interface for providing google drive folder link and querying
     st.header("Provide your Google drive folder Id!!")
-    google_drive_folder_id = st.text_input("Google Drive Folder Id")
-    
-    
+    google_drive_folder_link = st.text_input("Google Drive Folder link")
+    #check if the input field is not empty
+    if google_drive_folder_link:
+        try:
+            #extract the folder ID from the Google Drive folder link using regular expression
+            google_drive_folder_id = re.search(r"/folders/([^\s/]+)", google_drive_folder_link).group(1)
+        except:
+            st.error("please provide valid google drive folder link")
     if st.button("Load Data"):
         datauser={"token": st.session_state.token, "google_drive_folder_id": google_drive_folder_id}
         #sending request to API endpoints for users verification
@@ -114,7 +117,7 @@ if choice == 'Search' :
         if response.status_code == 200:
             message=response.json().get('message')
             st.write(message)
-            
+                        
             docs = load_data_from_drive(google_drive_folder_id)
     
             # Create or load the ingestion pipeline
