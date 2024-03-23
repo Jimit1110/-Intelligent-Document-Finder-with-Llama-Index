@@ -196,3 +196,4 @@ google-auth-oauthlib
 google-auth-httplib2 
 google-api-python-client
 psutil
+llama-index-readers-microsoft-onedrive
