@@ -8,3 +8,5 @@ venv
 indexed_files.txt
 credentials.json
 .env
+credentialsauth.json
+token.pickle
