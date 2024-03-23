@@ -2,10 +2,10 @@
 
 from llama_index.readers.google import GoogleDriveReader
 
-def load_data_from_drive(folder_id: str):
+def load_data_from_gdrive(file_ids):
     
     loader = GoogleDriveReader()
-    docs = loader.load_data(folder_id=folder_id)
+    docs = loader.load_data(file_ids=file_ids)
     for doc in docs:
         doc.id_ = doc.metadata["file_name"]
     return docs
