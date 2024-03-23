@@ -7,20 +7,22 @@ import requests
 from dotenv import load_dotenv
 import os
 from extract_id_from_onedrive import extract_onedrive_folder_id
-from extract_id_from_googledrive import extract_googledrive_folder_id
-from data_node_ingestion import ingestion
+from data_node_ingestion_onedrive import onedrive_data_ingestion
 from index_creater import new_index
+from data_node_ingestion_onedrive import onedrive_data_ingestion
+from get_gdrive_file_ids import list_files
+from data_node_ingestion_gdrive import gdrive_data_ingestion
 
-google_drive_folder_id=None
 one_drive_folder_id=None
+#checking if token is not in session_state then adding it with empty string. 
+if "token" not in st.session_state:
+    st.session_state["token"] = ""
 
 load_dotenv()
 GOOGLEAI_API_KEY=os.getenv('GOOGLEAI_API_KEY')
 
 API_URL_SIGNUP = "http://localhost:8000/auth/"
 API_URL_LOGIN = "http://localhost:8000/auth/token"
-API_URL_GDRIVE_VERIFY = "http://localhost:8000/auth/google-drive"
-API_URL_LOAD_ONEDRIVE ="http://localhost:8000/auth/one-drive"
 
 st.title("Welcom To Intelligent Document Finder App")
 
@@ -31,6 +33,7 @@ Settings.llm = Gemini(model="models/gemini-pro")
 @st.cache_data()
 def get_token(username, password):
     login_data = {"username": username, "password": password}
+    #sending request to API endpoin for login and generating JWT token.
     login_response = requests.post(API_URL_LOGIN, data=login_data)
 
     if login_response.status_code == 200:
@@ -45,13 +48,13 @@ def query_response(query):
     response = query_engine.query(query)
     if response.source_nodes:
         metadata = response.source_nodes[0].node.metadata
-        #checking whether google drive folder id is available or one drive and extracting metadata accordingly.
-        if google_drive_folder_id:
+        if one_drive_folder_id is None:
+            metadata = response.source_nodes[0].node.metadata    
             filename = metadata.get("file name", "Unknown")
             author = metadata.get("author", "Unknown")
             creation = metadata.get("created at", "Unknown")
             modified = metadata.get("modified at", "Unknown")
-        elif one_drive_folder_id:
+        else:
             filename = metadata.get("file_name", "Unknown")
             author = metadata.get("created_by_user", "Unknown")
             creation = metadata.get("created_dateTime", "Unknown")
@@ -97,40 +100,30 @@ if choice == 'Login' :
             st.session_state.token = token
 
 if choice == 'Search' :
-    #interface for providing google folder link and querying
-    st.header("Provide your Google Drive or One Drive folder URL")
-    folder_link = st.text_input("Folder URL")
-    #checking if folder link is provided in input field or not.
-    if folder_link:
-        #checking if provided link is of google drive or one drive and extracting folder id accordingly.
-        if folder_link.startswith("https://drive.google.com") or folder_link.startswith("http://drive.google.com"):
-            #calling a function to extract folder id from URL.
-            google_drive_folder_id = extract_googledrive_folder_id(folder_link)
-        elif folder_link.startswith("https://onedrive.live.com") or folder_link.startswith("http://onedrive.live.com"):
-            #calling a function to extract folder id from URL.
-            one_drive_folder_id = extract_onedrive_folder_id(folder_link)
-    if st.button("Load Data"):
-        if google_drive_folder_id:
-            datauser={"token": st.session_state.token, "google_drive_folder_id": google_drive_folder_id}
-            #sending request to API endpoints for users verification
-            response = requests.post(API_URL_GDRIVE_VERIFY, json=datauser)
-            #if user is verified sucessfully than process the documents from folder 
-            if response.status_code == 200:
-                message=response.json().get('message')
-                st.write(message)
+    folder_link = "https://onedrive.live.com/?id=root"
+    #extracting id from above URL.
+    one_drive_folder_id = extract_onedrive_folder_id(folder_link)
+    if st.button("Connect One Drive"):
+        #checking whether user is logged in or not.
+        if st.session_state.token:
+            if one_drive_folder_id:
                 #calling a function which ingest nodes in pipeline.
-                ingestion(one_drive_folder_id, google_drive_folder_id)
-                st.write(f"Data loaded from Google Drive folder: {google_drive_folder_id} and processed.")
+                onedrive_data_ingestion(one_drive_folder_id)
+                st.success("Google Drive is connect successfully and data loaded !!!")
             else:
-                st.error("Failed to Authenticate please provide link of your google drive folder only!!")
-        elif one_drive_folder_id:
-            #calling a function which ingest nodes in pipeline.
-            ingestion(one_drive_folder_id, google_drive_folder_id)
-            st.write(f"Data loaded from One Drive folder: {one_drive_folder_id} and processed.")
-
+                st.error("Please login first")
+    if st.button('Connect Google Drive'):
+        #checking whether user is logged in or not.
+        if st.session_state.token:
+            file_ids, folder_ids = list_files()
+            gdrive_data_ingestion(file_ids)
+            st.success("Google Drive is connect successfully and data loaded !!!")
+        else:
+            st.error("Please login first")
+    
     index = new_index(create_or_get_vectordb(), embed_model())
     query_engine = index.as_query_engine()
-
+    
     query = st.text_input("Enter your query:")
     if st.button("Query"):
         response, File_name, owner, date_creation, date_modified, page_no = query_response(query)
